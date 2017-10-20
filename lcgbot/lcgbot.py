@@ -139,7 +139,7 @@ def make_title_value(card, key, name = None, value = None, short = True):
         return None
 
 
-def make_attachment(card):
+def make_card_attachment(card):
     fields = ['cost', ('military', 'military_bonus'), 'glory',
             ('political', 'political_bonus'), 'influence']
     attachment_fields = []
@@ -173,9 +173,28 @@ def make_attachment(card):
             "mrkdwn_in": ['fields']
             }
 
+def find_rulings(name):
+    card_id = get_matching_card(name)['id']
+    r = requests.get('https://api.fiveringsdb.com/cards/{}/rulings'.format(card_id))
+    if r.status_code == 200:
+        return r.json()['records']
+
+def make_ruling_attachments(rulings):
+    return [{
+            "fallback": 'Rulings',
+            "color": '#363636',
+            "author_name": rule['source'],
+            "title": 'Rulings',
+            "text": rule.get('text'),
+            "title_link": rule.get('link', 'No link Available'),
+            "mrkdwn_in": ['text']
+            } for rule in rulings]
+
 if __name__ == '__main__':
     card_trigger = "!card"
-    offset = len(card_trigger) + 1
+    card_offset = len(card_trigger) + 1
+    rule_trigger = "!rule"
+    rule_offset = len(rule_trigger) + 1
     populate_cards()
     slack_token = os.environ.get('SLACK_BOT_TOKEN')
     sc = SlackClient(slack_token)
@@ -189,15 +208,28 @@ if __name__ == '__main__':
                         if msg.get('text') is not None and card_trigger in msg.get('text'):
                             print 'Received card trigger'
                             txt = msg['text']
-                            name = txt[txt.find(card_trigger)+offset:]
+                            name = txt[txt.find(card_trigger)+card_offset:]
                             card = get_matching_card(name)
                             response = 'Card not found'
                             if card is not None:
-                                response = make_attachment(card)
+                                response = make_card_attachment(card)
                             sc.api_call(
                                 'chat.postMessage',
                                 channel=msg.get('channel'),
                                 attachments=[response]
+                            )
+                        if msg.get('text') is not None and rule_trigger in msg.get('text'):
+                            print 'Received rule trigger'
+                            txt = msg['text']
+                            name = txt[txt.find(rule_trigger)+rule_offset:]
+                            rulings = find_rulings(name)
+                            response = 'Ruling not found'
+                            if rulings is not None:
+                                response = make_ruling_attachments(rulings)
+                            sc.api_call(
+                                'chat.postMessage',
+                                channel=msg.get('channel'),
+                                attachments=response
                             )
                     time.sleep(1)
             else:

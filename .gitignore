@@ -1,5 +1,6 @@
 #Specific files for this repo:
 token
+lcgbot/cards.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
