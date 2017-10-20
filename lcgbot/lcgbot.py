@@ -1,8 +1,10 @@
+# This Python file uses the following encoding: utf-8
 import json
 import os
 import requests
 import time
 from slackclient import SlackClient
+from socket import error as socket_error
 
 #In Memory Storage for now
 CARDS = None
@@ -19,13 +21,18 @@ colors = {
 
 def populate_cards():
     global CARDS
-    r = requests.get('https://api.fiveringsdb.com/cards')
-    if r.status_code == 200:
-        CARDS = r.json()['records']
-    else:
-        file_path = os.path.join(os.path.dirname(__file__), 'cards.json')
+    file_path = os.path.join(os.path.dirname(__file__), 'cards.json')
+    try:
+        r = requests.get('https://api.fiveringsdb.com/cards')
+        if r.status_code == 200:
+            CARDS = r.json()['records']
+            with open(file_path, 'w') as f:
+                json.dump(CARDS, f)
+        else:
+            raise RuntimeError("API Call not OK")
+    except:
         with open(file_path) as f:
-            CARDS = json.load(f)['records']
+            CARDS = json.load(f)
 
 def get_matching_card(name):
     global CARDS
@@ -54,9 +61,12 @@ def get_field(card, field, do_title = False):
     value = card.get(field)
     if value is None:
         return ''
-    value = str(value).encode('utf-8')
+    unique = ''
+    if card.get("unicity") and field == 'name':
+        unique = u'◦ '
     if do_title:
         value = value.title()
+    value = u'{}{}'.format(unique,value).encode('utf-8')
     return value
 
 def get_traits(card):
@@ -157,37 +167,45 @@ def make_attachment(card):
                 number = get_number(card)
                 ),
             "title": get_field(card, 'name'),
-            "title_link": "https://fiveringsdb.com/card/{}".format(
-                get_field(card, 'name_canonical').replace(' ', '-')
-                ),
+            "title_link": "https://fiveringsdb.com/card/{}".format(get_field(card, 'id')),
             "fields": attachment_fields,
             "image_url": get_image(card),
             "mrkdwn_in": ['fields']
             }
 
 if __name__ == '__main__':
-    trigger = "!card"
-    offset = len(trigger) + 1
+    card_trigger = "!card"
+    offset = len(card_trigger) + 1
     populate_cards()
     slack_token = os.environ.get('SLACK_BOT_TOKEN')
     sc = SlackClient(slack_token)
-    if sc.rtm_connect():
-        while True:
-            msgs = sc.rtm_read()
-            for msg in msgs:
-                if msg.get('text') is not None and '!card' in msg.get('text'):
-                    txt = msg['text']
-                    name = txt[txt.find(trigger)+offset:]
-                    card = get_matching_card(name)
-                    response = 'Card not found'
-                    if card is not None:
-                        response = make_attachment(card)
-                        print response
-                    sc.api_call(
-                        'chat.postMessage',
-                        channel=msg.get('channel'),
-                        attachments=[response]
-                    )
-            time.sleep(1)
-    else:
-        print "Connection failed"
+    while True:
+        try:
+            if sc.rtm_connect():
+                print 'Successfully connected'
+                while True:
+                    msgs = sc.rtm_read()
+                    for msg in msgs:
+                        if msg.get('text') is not None and card_trigger in msg.get('text'):
+                            print 'Received card trigger'
+                            txt = msg['text']
+                            name = txt[txt.find(card_trigger)+offset:]
+                            card = get_matching_card(name)
+                            response = 'Card not found'
+                            if card is not None:
+                                response = make_attachment(card)
+                            sc.api_call(
+                                'chat.postMessage',
+                                channel=msg.get('channel'),
+                                attachments=[response]
+                            )
+                    time.sleep(1)
+            else:
+                print "Connection failed"
+                time.sleep(5)
+        except socket_error,e:
+            print "Connection error:",e
+            time.sleep(5)
+        except Exception, e:
+            print "other eror:",e
+            time.sleep(5)
