@@ -161,7 +161,8 @@ def make_attachment(card):
                 get_field(card, 'name_canonical').replace(' ', '-')
                 ),
             "fields": attachment_fields,
-            "image_url": get_image(card)
+            "image_url": get_image(card),
+            "mrkdwn_in": ['fields']
             }
 
 if __name__ == '__main__':
