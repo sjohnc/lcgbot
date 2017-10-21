@@ -214,12 +214,13 @@ if __name__ == '__main__':
     card_offset = len(card_trigger) + 1
     rule_trigger = "!rule"
     rule_offset = len(rule_trigger) + 1
-    populate_cards()
+    refresh_trigger = "!refresh"
     slack_token = os.environ.get('SLACK_BOT_TOKEN')
     sc = SlackClient(slack_token)
     while True:
         try:
             if sc.rtm_connect():
+                populate_cards()
                 print 'Successfully connected'
                 while True:
                     msgs = sc.rtm_read()
@@ -230,6 +231,13 @@ if __name__ == '__main__':
                             response = handle_card(txt)
                         if txt is not None and rule_trigger in msg.get('text'):
                             response = handle_rule(txt)
+                        if txt is not None and refresh_trigger in msg.get('text'):
+                            populate_cards()
+                            sc.api_call(
+                                'chat.postMessage',
+                                channel=msg.get('channel'),
+                                text="Refreshed DB"
+                            )
                         if response is not None:
                             sc.api_call(
                                 'chat.postMessage',
