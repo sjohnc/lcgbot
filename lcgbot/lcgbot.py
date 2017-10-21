@@ -34,6 +34,21 @@ def populate_cards():
         with open(file_path) as f:
             CARDS = json.load(f)
 
+def populate_swcards():
+    global SWCARDS
+    file_path = os.path.join(os.path.dirname(__file__), 'swcards.json')
+    try:
+        r = requests.get('https://swdestinydb.com/api/public/cards')
+        if r.status_code == 200:
+            SWCARDS = r.json()
+            with open(file_path, 'w') as f:
+                json.dump(SWCARDS, f)
+        else:
+            raise RuntimeError("API Call not OK")
+    except:
+        with open(file_path) as f:
+            SWCARDS = json.load(f)
+
 def get_matching_card(name):
     global CARDS
     all_cards = [c for c in CARDS if name.lower() in c['name_canonical'].lower()]
@@ -193,7 +208,7 @@ def make_ruling_attachments(rulings):
 def handle_rule(txt):
     print 'Received rule trigger'
     txt = msg['text']
-    name = txt[txt.find(rule_trigger)+rule_offset:]
+    name = txt[txt.find(l5rrule_trigger)+l5rrule_offset:]
     rulings = find_rulings(name)
     response = 'Ruling not found'
     if rulings is not None:
@@ -202,7 +217,7 @@ def handle_rule(txt):
 
 def handle_card(txt):
     print 'Received card trigger'
-    name = txt[txt.find(card_trigger)+card_offset:]
+    name = txt[txt.find(l5rcard_trigger)+l5rcard_offset:]
     card = get_matching_card(name)
     response = 'Card not found'
     if card is not None:
@@ -210,10 +225,12 @@ def handle_card(txt):
     return [response]
 
 if __name__ == '__main__':
-    card_trigger = "!card"
-    card_offset = len(card_trigger) + 1
-    rule_trigger = "!rule"
-    rule_offset = len(rule_trigger) + 1
+    l5rcard_trigger = "!card"
+    l5rcard_offset = len(l5rcard_trigger) + 1
+    swcard_trigger = "!swcard"
+    swcard_offset = len(swcard_trigger) + 1
+    l5rrule_trigger = "!rule"
+    l5rrule_offset = len(l5rrule_trigger) + 1
     refresh_trigger = "!refresh"
     slack_token = os.environ.get('SLACK_BOT_TOKEN')
     sc = SlackClient(slack_token)
@@ -227,9 +244,9 @@ if __name__ == '__main__':
                     for msg in msgs:
                         response = None
                         txt = msg.get('text')
-                        if msg.get('text') is not None and card_trigger in msg.get('text'):
+                        if msg.get('text') is not None and l5rcard_trigger in msg.get('text'):
                             response = handle_card(txt)
-                        if txt is not None and rule_trigger in msg.get('text'):
+                        if txt is not None and l5rrule_trigger in msg.get('text'):
                             response = handle_rule(txt)
                         if txt is not None and refresh_trigger in msg.get('text'):
                             populate_cards()
