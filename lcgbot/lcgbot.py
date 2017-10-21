@@ -190,6 +190,25 @@ def make_ruling_attachments(rulings):
             "mrkdwn_in": ['text']
             } for rule in rulings]
 
+def handle_rule(txt):
+    print 'Received rule trigger'
+    txt = msg['text']
+    name = txt[txt.find(rule_trigger)+rule_offset:]
+    rulings = find_rulings(name)
+    response = 'Ruling not found'
+    if rulings is not None:
+        response = make_ruling_attachments(rulings)
+    return response
+
+def handle_card(txt):
+    print 'Received card trigger'
+    name = txt[txt.find(card_trigger)+card_offset:]
+    card = get_matching_card(name)
+    response = 'Card not found'
+    if card is not None:
+        response = [make_card_attachment(card)]
+    return [response]
+
 if __name__ == '__main__':
     card_trigger = "!card"
     card_offset = len(card_trigger) + 1
@@ -205,27 +224,13 @@ if __name__ == '__main__':
                 while True:
                     msgs = sc.rtm_read()
                     for msg in msgs:
+                        response = None
+                        txt = msg.get('text')
                         if msg.get('text') is not None and card_trigger in msg.get('text'):
-                            print 'Received card trigger'
-                            txt = msg['text']
-                            name = txt[txt.find(card_trigger)+card_offset:]
-                            card = get_matching_card(name)
-                            response = 'Card not found'
-                            if card is not None:
-                                response = make_card_attachment(card)
-                            sc.api_call(
-                                'chat.postMessage',
-                                channel=msg.get('channel'),
-                                attachments=[response]
-                            )
-                        if msg.get('text') is not None and rule_trigger in msg.get('text'):
-                            print 'Received rule trigger'
-                            txt = msg['text']
-                            name = txt[txt.find(rule_trigger)+rule_offset:]
-                            rulings = find_rulings(name)
-                            response = 'Ruling not found'
-                            if rulings is not None:
-                                response = make_ruling_attachments(rulings)
+                            response = handle_card(txt)
+                        if txt is not None and rule_trigger in msg.get('text'):
+                            response = handle_rule(txt)
+                        if response is not None:
                             sc.api_call(
                                 'chat.postMessage',
                                 channel=msg.get('channel'),
