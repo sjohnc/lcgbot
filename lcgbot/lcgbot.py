@@ -244,7 +244,7 @@ def build_swfields(card):
     text = get_field(card, 'text')
     if text:
         field_text = {
-                        "value": text,
+                        "value": slackify_text(text.encode('utf-8')),
                         "short": False
                     }
         fields.append(field_text)
