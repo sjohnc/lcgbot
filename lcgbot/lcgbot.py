@@ -217,6 +217,13 @@ def get_points(card):
     else:
         return ''
 
+def get_subtype(card):
+    subtype = get_field(card, 'subtype_name', True)
+    if subtype:
+        return ' - {}'.format(subtype)
+    else:
+        return ''
+
 # def pprint_card(card):
 #     pprinted = ''
 #     pprinted += make_key_value('Name', get_field(card, 'name'))
@@ -297,7 +304,7 @@ def make_swcard_attachment(card):
     print('title')
     title_link = get_field(card, 'url')
     print('title_link')
-    text = "*{} - {} {} {}*".format(get_field(card, 'type_name', True), get_field(card, 'subtype_name', True), get_health(card), get_points(card))
+    text = "*{} {} {} {}*".format(get_field(card, 'type_name', True), get_subtype(card), get_health(card), get_points(card))
     print('text')
     field_cost = {
                         "title": "Cost",
