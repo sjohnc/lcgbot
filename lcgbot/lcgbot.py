@@ -23,7 +23,7 @@ colors = {
         }
 
 swcolors = {
-        'red': "##b22222",
+        'red': "#b22222",
         'yellow': "#dab032",
         'blue': "#0b609e",
         'gray': "#979d9f",
