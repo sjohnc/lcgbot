@@ -188,7 +188,7 @@ def make_dice(die):
         'F': 'focus',
         'R': 'resource',
         'Sp': 'special',
-        'Sh': 'shield',
+        'Sh': 'swd-shield',
         'X': ''
     }
     sides = []
@@ -336,7 +336,7 @@ def make_swcard_attachment(card):
     fields = build_swfields(card)
     print('built fields')
 
-    image_url = get_field(card, 'imgsrc')
+    image_url = get_field(card, 'imagesrc')
     print('image url')
     footer = ':set-{}: {} #{}'.format(get_field(card, 'set_code').lower(), get_field(card, 'set_name'), get_field(card, 'position'))
     print('footer')
@@ -351,6 +351,7 @@ def make_swcard_attachment(card):
             "fields": fields,
             "image_url": image_url,
             "footer": footer,
+            "image_url": image_url,
             "mrkdwn_in": mrkdwn_in,
         }
     ]
