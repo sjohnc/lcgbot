@@ -381,27 +381,31 @@ def handle_rule(txt, trigger, offset):
     txt = msg['text']
     name = txt[txt.find(trigger)+offset:]
     rulings = find_rulings(name)
-    response = 'Ruling not found'
     if rulings is not None:
         response = make_ruling_attachments(rulings)
+    else:
+        response = 'Ruling not found'
     return response
 
 def handle_card(txt, trigger, offset):
     print 'Received l5r card trigger'
     name = txt[txt.find(trigger)+offset:]
     card = get_matching_card(name)
-    response = 'Card not found'
     if card is not None:
         response = [make_card_attachment(card)]
-    return [response]
+    else:
+        response = 'Card not found'
+    return response
 
 def handle_swcard(txt, trigger, offset):
     print 'Received swcard trigger'
     name = txt[txt.find(trigger)+offset:]
     card = get_matching_swcard(name)
-    response = 'Card not found'
     if card is not None:
         response = make_swcard_attachment(card)
+    else:
+        response = 'Card not found'
+        print(response)
     return response
 
 if __name__ == '__main__':
@@ -445,11 +449,18 @@ if __name__ == '__main__':
                                 channel=msg.get('channel'),
                                 text="Refreshed DB"
                             )
-                        if response is not None:
+
+                        if response is not None and isinstance(response, list):
                             sc.api_call(
                                 'chat.postMessage',
                                 channel=msg.get('channel'),
                                 attachments=response
+                            )
+                        elif response is not None and isinstance(response, str):
+                            sc.api_call(
+                                'chat.postMessage',
+                                channel=msg.get('channel'),
+                                text=response
                             )
                     time.sleep(1)
             else:
