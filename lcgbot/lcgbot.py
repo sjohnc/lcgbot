@@ -338,7 +338,7 @@ def make_swcard_attachment(card):
 
     image_url = get_field(card, 'imgsrc')
     print('image url')
-    footer = ':{}: {} #{}'.format(get_field(card, 'set_code'), get_field(card, 'set_name'), get_field(card, 'position'))
+    footer = ':set-{}: {} #{}'.format(get_field(card, 'set_code').lower(), get_field(card, 'set_name'), get_field(card, 'position'))
     print('footer')
     mrkdwn_in = ['fields', 'text', 'footer', 'title', 'fallback']
     ret = [
