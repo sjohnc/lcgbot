@@ -376,28 +376,28 @@ def make_ruling_attachments(rulings):
             "mrkdwn_in": ['text']
             } for rule in rulings]
 
-def handle_rule(txt):
-    print 'Received rule trigger'
+def handle_rule(txt, trigger, offset):
+    print 'Received l5r rule trigger'
     txt = msg['text']
-    name = txt[txt.find(l5rrule_trigger)+l5rrule_offset:]
+    name = txt[txt.find(trigger)+offset:]
     rulings = find_rulings(name)
     response = 'Ruling not found'
     if rulings is not None:
         response = make_ruling_attachments(rulings)
     return response
 
-def handle_card(txt):
-    print 'Received card trigger'
-    name = txt[txt.find(l5rcard_trigger)+l5rcard_offset:]
+def handle_card(txt, trigger, offset):
+    print 'Received l5r card trigger'
+    name = txt[txt.find(trigger)+offset:]
     card = get_matching_card(name)
     response = 'Card not found'
     if card is not None:
         response = [make_card_attachment(card)]
     return [response]
 
-def handle_swcard(txt):
+def handle_swcard(txt, trigger, offset):
     print 'Received swcard trigger'
-    name = txt[txt.find(swcard_trigger)+swcard_offset:]
+    name = txt[txt.find(trigger)+offset:]
     card = get_matching_swcard(name)
     response = 'Card not found'
     if card is not None:
@@ -405,8 +405,8 @@ def handle_swcard(txt):
     return response
 
 if __name__ == '__main__':
-    l5rcard_trigger = "!card"
-    l5rcard_offset = len(l5rcard_trigger) + 1
+    card_trigger = "!card"
+    card_offset = len(card_trigger) + 1
     swcard_trigger = "!swcard"
     swcard_offset = len(swcard_trigger) + 1
     l5rrule_trigger = "!rule"
@@ -425,13 +425,19 @@ if __name__ == '__main__':
                     for msg in msgs:
                         response = None
                         txt = msg.get('text')
-                        if msg.get('text') is not None and l5rcard_trigger in msg.get('text'):
-                            response = handle_card(txt)
-                        if txt is not None and l5rrule_trigger in msg.get('text'):
-                            response = handle_rule(txt)
-                        if txt is not None and swcard_trigger in txt:
-                            response = handle_swcard(txt)
-                        if txt is not None and refresh_trigger in msg.get('text'):
+                        channel = msg.get('channel')
+                        # this grabs channel id - C7KPSS7N1 is botz C75G226AG is star-wars-destiny, C440DKEKX is l5r
+                        if txt is not None and card_trigger in txt and channel == 'C75G226AG':
+                            response = handle_swcard(txt, card_trigger, card_offset)
+                        elif txt is not None and card_trigger in txt and channel == 'C440DKEKX':
+                            response = handle_card(txt, card_trigger, card_offset)
+                        elif txt is not None and card_trigger in txt:
+                            response = handle_card(txt, card_trigger, card_offset)
+                        elif txt is not None and l5rrule_trigger in txt:
+                            response = handle_rule(txt, l5rrule_trigger, l5rrule_offset)
+                        elif txt is not None and swcard_trigger in txt:
+                            response = handle_swcard(txt, swcard_trigger, swcard_offset)
+                        elif txt is not None and refresh_trigger in txt:
                             populate_cards()
                             populate_swcards()
                             sc.api_call(
