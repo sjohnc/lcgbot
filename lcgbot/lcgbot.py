@@ -107,7 +107,41 @@ def get_matching_swcard(name):
     global SWCARDS
     all_cards = [c for c in SWCARDS if name.lower() in c['label'].lower()]
     first_card = all_cards[0] if len(all_cards) else None
-    return first_card
+    print("firstcard type:{}".format(type(first_card)))
+    print("allcards type:{} len:{}".format(type(all_cards),len(all_cards)))
+    if len(all_cards) > 1:
+        # do multi card menu
+        return all_cards
+    else:
+        return first_card
+
+def build_multi_swcard_menu(all_cards):
+    optionslist = []
+    for card in all_cards:
+        cardchoice = {
+            "text": get_field(card, 'label', True),
+            "value": get_field(card, 'label', True)
+        }
+        optionslist.append(cardchoice)
+    print(optionslist)
+    ret = {
+            "text": "Multiple Cards Found!",
+            "response_type": "in_channel",
+            "attachments": [{
+                "text": "Choose a specific card to display",
+                "fallback": "If you could read this message, you should have picked a card.",
+                "color": "#63FF85",
+                "attachment_type": "default",
+                "callback_id": "card_selection",
+                "actions": [{
+                    "name": "cards_list",
+                    "text": "Pick a card...",
+                    "type": "select",
+                    "options": optionslist
+                }]
+            }]
+        }
+    return ret
 
 def slackify_text(text):
     text = text.replace('<b>', '*')
@@ -402,7 +436,11 @@ def handle_swcard(txt, trigger, offset):
     name = txt[txt.find(trigger)+offset:]
     card = get_matching_swcard(name)
     if card is not None:
-        response = make_swcard_attachment(card)
+        if isinstance(card, list):
+            response = build_multi_swcard_menu(card)
+            print(response)
+        else:
+            response = make_swcard_attachment(card)
     else:
         response = 'Card not found'
         print(response)
@@ -413,6 +451,8 @@ if __name__ == '__main__':
     card_offset = len(card_trigger) + 1
     swcard_trigger = "!swcard"
     swcard_offset = len(swcard_trigger) + 1
+    l5rcard_trigger = "!l5rcard"
+    l5rcard_offset = len(l5rcard_trigger) + 1
     l5rrule_trigger = "!rule"
     l5rrule_offset = len(l5rrule_trigger) + 1
     refresh_trigger = "!refreheash"
@@ -435,8 +475,8 @@ if __name__ == '__main__':
                             response = handle_swcard(txt, card_trigger, card_offset)
                         elif txt is not None and card_trigger in txt and channel == 'C440DKEKX':
                             response = handle_card(txt, card_trigger, card_offset)
-                        elif txt is not None and card_trigger in txt:
-                            response = handle_card(txt, card_trigger, card_offset)
+                        elif txt is not None and l5rcard_trigger in txt:
+                            response = handle_card(txt, l5rcard_trigger, l5rcard_offset)
                         elif txt is not None and l5rrule_trigger in txt:
                             response = handle_rule(txt, l5rrule_trigger, l5rrule_offset)
                         elif txt is not None and swcard_trigger in txt:
@@ -455,6 +495,13 @@ if __name__ == '__main__':
                                 'chat.postMessage',
                                 channel=msg.get('channel'),
                                 attachments=response
+                            )
+                        elif response is not None and isinstance(response, dict):
+                            sc.api_call(
+                                'chat.postMessage',
+                                channel=msg.get('channel'),
+                                attachments=response['attachments'],
+                                text=response['text']
                             )
                         elif response is not None and isinstance(response, str):
                             sc.api_call(
