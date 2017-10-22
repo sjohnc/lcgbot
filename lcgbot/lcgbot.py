@@ -224,6 +224,32 @@ def get_subtype(card):
     else:
         return ''
 
+def build_swfields(card):
+    fields = []
+    cost = get_field(card, 'cost')
+    if cost:
+        field_cost = {
+                        "title": "Cost",
+                        "value": "{} :resource:".format(cost),
+                        "short": True
+                    }
+        fields.append(field_cost)
+    sides = make_dice(card.get('sides', []))
+    if sides != '[]':
+        field_sides = {
+                        "value": sides,
+                        "short": False
+                    }
+        fields.append(field_sides)
+    text = get_field(card, 'text')
+    if text:
+        field_text = {
+                        "value": text,
+                        "short": False
+                    }
+        fields.append(field_text)
+    return fields
+
 # def pprint_card(card):
 #     pprinted = ''
 #     pprinted += make_key_value('Name', get_field(card, 'name'))
@@ -306,24 +332,10 @@ def make_swcard_attachment(card):
     print('title_link')
     text = "*{} {} {} {}*".format(get_field(card, 'type_name', True), get_subtype(card), get_health(card), get_points(card))
     print('text')
-    field_cost = {
-                        "title": "Cost",
-                        "value": "{} :resource:".format(get_field(card, 'cost')),
-                        "short": True
-                    }
-    print('cost')
-    field_sides = {
-                        "value": make_dice(card.get('sides', [])),
-                        "short": False
-                    }
-    print('sides')
-    field_text = {
-                        "value": get_field(card, 'text'),
-                        "short": False
-                    }
-    print('ftext')
-    fields = [field_cost, field_sides, field_text]
-    print('fields')
+
+    fields = build_swfields(card)
+    print('built fields')
+
     image_url = get_field(card, 'imgsrc')
     print('image url')
     footer = ':{}: {} #{}'.format(get_field(card, 'set_code'), get_field(card, 'set_name'), get_field(card, 'position'))
